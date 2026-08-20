@@ -25,7 +25,7 @@ final class MarvelCharacterCell: UITableViewCell {
         fileprivate static let horizontalSpacing: CGFloat = 16.0
     }
     
-    static let reuseIdentifier = String(describing: self)
+    static let reuseIdentifier = String(describing: MarvelCharacterCell.self)
     
     private let characterImageView = UIImageView()
     private let nameLabel = UILabel()
