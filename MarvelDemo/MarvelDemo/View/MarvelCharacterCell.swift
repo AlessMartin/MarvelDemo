@@ -29,6 +29,7 @@ final class MarvelCharacterCell: UITableViewCell {
     
     private let characterImageView = UIImageView()
     private let nameLabel = UILabel()
+    private var imageTask: ImageTask?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -46,6 +47,9 @@ final class MarvelCharacterCell: UITableViewCell {
         NSLayoutConstraint.pin(stackView, to: contentView, insets: UI.insets)
         
         stackView.addArrangedSubview(characterImageView)
+        characterImageView.contentMode = .scaleAspectFill
+        characterImageView.clipsToBounds = true
+        characterImageView.layer.cornerRadius = 8
         NSLayoutConstraint.setSize(of: characterImageView, to: UI.imageSize)
         
         nameLabel.numberOfLines = 0
@@ -57,15 +61,29 @@ final class MarvelCharacterCell: UITableViewCell {
         nameLabel.text = marvelCharacter.name
         
         if let imageURL = marvelCharacter.thumbnail?.url {
-            Nuke.loadImage(with: imageURL, into: characterImageView)
+            // Cancel any previous task for reused cells
+            imageTask?.cancel()
+            characterImageView.image = UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+            imageTask = ImagePipeline.shared.loadImage(with: imageURL) { [weak self] result in
+                guard let self = self else { return }
+                switch result {
+                case .success(let response):
+                    self.characterImageView.image = response.image
+                case .failure:
+                    self.characterImageView.image = UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+                }
+            }
         } else {
+            imageTask?.cancel()
             characterImageView.image = UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
         }
     }
     
     func reset() {
-        Nuke.cancelRequest(for: characterImageView)
+        imageTask?.cancel()
+        imageTask = nil
         nameLabel.text = nil
         characterImageView.image = nil
     }
 }
+
