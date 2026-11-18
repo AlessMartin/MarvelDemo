@@ -110,8 +110,27 @@ final class CharacterDetailViewController: UIViewController {
     private func updateUI() {
         descriptionLabel.text = viewModel.description
         if let imageURL = viewModel.imageURL {
-            Nuke.loadImage(with: imageURL, into: characterImageView)
+            // Load image with Nuke's pipeline (newer API)
+            characterImageView.contentMode = .scaleAspectFill
+            let placeholder = UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+            characterImageView.image = placeholder
+
+            let request = ImageRequest(url: imageURL)
+            ImagePipeline.shared.loadImage(with: request) { [weak characterImageView] result in
+                switch result {
+                case .success(let response):
+                    DispatchQueue.main.async {
+                        characterImageView?.image = response.image
+                    }
+                case .failure:
+                    DispatchQueue.main.async {
+                        characterImageView?.image = placeholder
+                        characterImageView?.contentMode = .center
+                    }
+                }
+            }
         } else {
+            characterImageView.contentMode = .center
             characterImageView.image = UIImage(systemName: "photo")?.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
         }
         comicsLabel.text = viewModel.comicsText
@@ -120,3 +139,4 @@ final class CharacterDetailViewController: UIViewController {
         storiesLabel.text = viewModel.storiesText
     }
 }
+
